@@ -24,8 +24,8 @@ CUTOFF_THRESHOLD = 10
 CUSTOM_BODY_CONNECTION = frozenset([t for t in mp_holistic.POSE_CONNECTIONS if t[0] not in excluded_index_pose and t[1] not in excluded_index_pose ])
 
 # Load Image Test
-# img_path = 'assets/img/Test3_crop.jpg'
-img_path = 'assets/img/Test6.jpg'
+img_path = 'assets/img/Test3.jpg'
+# img_path = 'assets/img/Test6.jpg'
 image = cv2.imread(img_path)
 
 
@@ -38,27 +38,25 @@ with mp_holistic.Holistic(**settings) as holistic:      # Create holistic object
 
         # Draw landmarks
         # Face
+        # FACEMESH_TESSELATION or FACEMESH_CONTOURS
         mp_drawing.draw_landmarks(image= image,
                                   landmark_list= results.face_landmarks,
-                                  connections= mp_holistic.FACEMESH_TESSELATION,
+                                  connections= mp_holistic.FACEMESH_CONTOURS,
                                   landmark_drawing_spec = mp_drawing.DrawingSpec(**draw_face_landmark),
-                                  connection_drawing_spec = mp_drawing.DrawingSpec(**draw_face_connection),
-                                  is_drawing_landmarks = True
+                                  connection_drawing_spec = mp_drawing.DrawingSpec(**draw_face_connection)
                                   )
         # Hands
         mp_drawing.draw_landmarks(image=image,
                                   landmark_list=results.right_hand_landmarks,
                                   connections=mp_holistic.HAND_CONNECTIONS,
                                   landmark_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_landmark),
-                                  connection_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_connection),
-                                  is_drawing_landmarks=True
+                                  connection_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_connection)
                                   )
         mp_drawing.draw_landmarks(image=image,
                                   landmark_list=results.left_hand_landmarks,
                                   connections=mp_holistic.HAND_CONNECTIONS,
                                   landmark_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_landmark),
-                                  connection_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_connection),
-                                  is_drawing_landmarks=True
+                                  connection_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_connection)
                                   )
 
         # Body
@@ -73,8 +71,7 @@ with mp_holistic.Holistic(**settings) as holistic:      # Create holistic object
                                       landmark_list=results.pose_landmarks,
                                       connections=CUSTOM_BODY_CONNECTION,
                                       landmark_drawing_spec=mp_drawing.DrawingSpec(**draw_body_landmark),
-                                      connection_drawing_spec=mp_drawing.DrawingSpec(**draw_body_connection),
-                                      is_drawing_landmarks=True
+                                      connection_drawing_spec=mp_drawing.DrawingSpec(**draw_body_connection)
                                       )
 
 
@@ -95,37 +92,33 @@ with mp_holistic.Holistic(**settings) as holistic:      # Create holistic object
                 continue
             err = 0
 
+            image = frame
             # Recolor Feed into RGB for MP
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             # Make Detections
             results = holistic.process(image)
 
-            # Recolor Feed into BGR for Display
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
             # Draw landmarks
             # Face
+            # FACEMESH_CONTOURS or FACEMESH_TESSELATION
             mp_drawing.draw_landmarks(image=image,
                                       landmark_list=results.face_landmarks,
-                                      connections=mp_holistic.FACEMESH_TESSELATION,
+                                      connections= mp_holistic.FACEMESH_CONTOURS,
                                       landmark_drawing_spec=mp_drawing.DrawingSpec(**draw_face_landmark),
-                                      connection_drawing_spec=mp_drawing.DrawingSpec(**draw_face_connection),
-                                      is_drawing_landmarks=True
+                                      connection_drawing_spec=mp_drawing.DrawingSpec(**draw_face_connection)
                                       )
             # Hands
             mp_drawing.draw_landmarks(image=image,
                                       landmark_list=results.right_hand_landmarks,
                                       connections=mp_holistic.HAND_CONNECTIONS,
                                       landmark_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_landmark),
-                                      connection_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_connection),
-                                      is_drawing_landmarks=True
+                                      connection_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_connection)
                                       )
             mp_drawing.draw_landmarks(image=image,
                                       landmark_list=results.left_hand_landmarks,
                                       connections=mp_holistic.HAND_CONNECTIONS,
                                       landmark_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_landmark),
-                                      connection_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_connection),
-                                      is_drawing_landmarks=True
+                                      connection_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_connection)
                                       )
 
             # Body
@@ -140,10 +133,11 @@ with mp_holistic.Holistic(**settings) as holistic:      # Create holistic object
                                           landmark_list=results.pose_landmarks,
                                           connections=CUSTOM_BODY_CONNECTION,
                                           landmark_drawing_spec=mp_drawing.DrawingSpec(**draw_body_landmark),
-                                          connection_drawing_spec=mp_drawing.DrawingSpec(**draw_body_connection),
-                                          is_drawing_landmarks=True
+                                          connection_drawing_spec=mp_drawing.DrawingSpec(**draw_body_connection)
                                           )
 
+            # Recolor Feed into BGR for Display
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
             # FPS Display
             new_frame_time = time.time()
@@ -151,6 +145,7 @@ with mp_holistic.Holistic(**settings) as holistic:      # Create holistic object
             prev_frame_time = new_frame_time
             fps = int(fps)
             cv2.putText(image, str(fps), (500, 500), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
+
 
             # Display the resulting frame
             cv2.imshow('Holistic Pose Detection', image)

@@ -20,20 +20,20 @@ settings = {
 
 # MP Landmarks Drawing settings
 draw_face_landmark = {
-    'color' : (0, 255, 0),
+    'color' : (0, 128, 200),  #BGR color
     'thickness' : 0,
-    'circle_radius' : 0
+    'circle_radius' : 1
 }
 draw_face_connection = {
     'color' : (0, 0, 255),
-    'thickness' : 1,
-    'circle_radius' : 0
+    'thickness' : 2,
+    'circle_radius' : 1
 }
 
 draw_hand_landmark = {
     'color' : (255, 0, 0),
-    'thickness' : 0,
-    'circle_radius' : 0
+    'thickness' : 1,
+    'circle_radius' : 2
 }
 draw_hand_connection = {
     'color' : (255, 0, 0),
@@ -44,7 +44,7 @@ draw_hand_connection = {
 draw_body_landmark = {
     'color' : (0, 0, 255),
     'thickness' : 0,
-    'circle_radius' : 2
+    'circle_radius' : 4
 }
 draw_body_connection = {
     'color' : (0, 255, 0),
