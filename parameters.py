@@ -1,5 +1,6 @@
 "All parameters all here "
 import cv2
+from enum import Enum
 # import pyautogui
 
 # Camera resolution
@@ -17,6 +18,16 @@ settings = {
     'min_detection_confidence': 0.5,
     'min_tracking_confidence': 0.5
 }
+
+# MediaPipe Holistic Settings
+settings_face_mesh = {
+    'static_image_mode' : False,
+    'max_num_faces' : 2,
+    'refine_landmarks' : False,
+    'min_detection_confidence' : 0.5,
+    'min_tracking_confidence' : 0.5
+}
+
 
 # MP Landmarks Drawing settings
 draw_face_landmark = {
@@ -52,24 +63,30 @@ draw_body_connection = {
     'circle_radius' : 0
 }
 
-# Test mode
-mode_img = 'img'
-mode_cam = 'cam'
-mode = mode_cam
 
-# window_width, window_height = pyautogui.size()
-
-# crop_height = min(window_height//2,res_cam_height)  # //2 Because we want to display 2 img on the same screen
-# crop_width = min(window_width,res_cam_width)        # Minimum to adjust if cam res < screen res
-# # crop_width = window_width
-# # if crop_height>res_cam_height:
-# #     crop_height=res_cam_height
-# #
-# # if crop_width>res_cam_width:
-# #     crop_width=res_cam_width
-
-# crop_dim = (crop_height, crop_width)
-# center = (int(res_cam_height*0.5), res_cam_width//2)       # Crop Center // Adjust height
-
-# Font Display Settings
 font = cv2.FONT_HERSHEY_SIMPLEX
+
+# List of values needed from Blendshape
+blend_list = [
+    "JAW_OPEN",
+    "BROW_DOWN_LEFT",
+    "BROW_DOWN_RIGHT",
+    "BROW_OUTER_UP_LEFT",
+    "BROW_OUTER_UP_RIGHT",
+    "MOUTH_CLOSE",
+    "MOUTH_PUCKER",
+    "EYE_BLINK_LEFT",
+    "EYE_BLINK_RIGHT",
+    "MOUTH_SMILE_LEFT",
+    "MOUTH_SMILE_RIGHT"
+    ]
+
+class event_triggers(float, Enum):
+    NO_BLINK = 0.15
+    BLINK = 0.3
+    KISS = 0.4
+    BROW_DOWN = 0.4
+    OPEN_MOUTH = 0.5
+    NO_OPEN_MOUTH = 0.1
+    SMILE = 0.65
+    BROW_UP = 0.8

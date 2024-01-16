@@ -1,3 +1,5 @@
+#mediapipe-model-maker
+#tensorflow-datasets ==4.8.3
 mediapipe
 opencv-python
-# mediapipe-model-maker
+utils
