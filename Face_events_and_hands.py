@@ -91,6 +91,8 @@ hands_gesture = {
     "RIGHT": None
 }
 
+face_values = {i : None for i in blend_list}
+
 """
 ==========================================================================================================
 MODELS INITIALIZATION (MP TASK)
@@ -293,7 +295,7 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
             cv2.putText(image, text, (10, 30 * (1 + list(face_status.keys()).index(event_name))),font, 1, color, 2, cv2.LINE_AA)
         # Display face values
         for i, (blendshape, value) in enumerate(face_values.items()):
-            blendshape_text = f'{blendshape}: {round(value,5)}'
+            blendshape_text = f'{blendshape}: {round(value,5)}' if value!=None else f'{blendshape}: {value}'
             cv2.putText(image, blendshape_text, (10, 30 * (i + 1 + len(face_status) + 1)),font, 0.7, (255, 255, 0), 2, cv2.LINE_AA)
 
         # Display hand results    
