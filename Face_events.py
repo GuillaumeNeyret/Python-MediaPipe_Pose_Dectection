@@ -4,42 +4,6 @@ import time, cv2
 from mediapipe.tasks.python.vision.face_landmarker import Blendshapes
 from typing import List, Dict
 
-mp_drawing = mp.solutions.drawing_utils
-mp_holistic = mp.solutions.holistic                 # Load Holistic module
-
-BaseOptions = mp.tasks.BaseOptions                  
-VisionRunningMode = mp.tasks.vision.RunningMode
-
-cam = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-# Set Camera Resolution
-cam.set(cv2.CAP_PROP_FRAME_WIDTH, res_cam_width)
-cam.set(cv2.CAP_PROP_FRAME_HEIGHT, res_cam_height)
-
-prev_frame_time = 0
-err = 0
-
-# Get rid of Face and Hand Points of the pose
-excluded_index_pose = [0,1,2,3,4,5,6,7,8,9,10,17,18,19,20,21,22]
-CUTOFF_THRESHOLD = 10
-CUSTOM_BODY_CONNECTION = frozenset([t for t in mp_holistic.POSE_CONNECTIONS if t[0] not in excluded_index_pose and t[1] not in excluded_index_pose ])
-
-# Facial Blendshape model
-FaceLandmarker = mp.tasks.vision.FaceLandmarker
-FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
-FaceLandmarkerResult = mp.tasks.vision.FaceLandmarkerResult
-
-options = FaceLandmarkerOptions(
-    base_options=BaseOptions(model_asset_path='assets/models/face_landmarker_v2_with_blendshapes.task'),
-    running_mode=VisionRunningMode.VIDEO,
-    output_face_blendshapes=True,
-    output_facial_transformation_matrixes=True
-    )
-
-Face_recognizer = FaceLandmarker.create_from_options(options)
-
-timestamp = 0
-
-
 # Transform a blendshape to a dict with only values from the need_value list
 def blendshapes_to_dict(face_blendshape):
 
@@ -86,6 +50,38 @@ def event_faces(blend_values: Dict[str, float]) -> Dict[str, bool]:
         'angry': angry(blend_values)
     }
 
+
+mp_drawing = mp.solutions.drawing_utils
+mp_holistic = mp.solutions.holistic                 # Load Holistic module
+
+BaseOptions = mp.tasks.BaseOptions                  
+VisionRunningMode = mp.tasks.vision.RunningMode
+
+cam = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+# Set Camera Resolution
+cam.set(cv2.CAP_PROP_FRAME_WIDTH, res_cam_width)
+cam.set(cv2.CAP_PROP_FRAME_HEIGHT, res_cam_height)
+
+prev_frame_time = 0
+err = 0
+
+# Facial Blendshape model
+FaceLandmarker = mp.tasks.vision.FaceLandmarker
+FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
+FaceLandmarkerResult = mp.tasks.vision.FaceLandmarkerResult
+
+options = FaceLandmarkerOptions(
+    base_options=BaseOptions(model_asset_path='assets/models/face_landmarker_v2_with_blendshapes.task'),
+    running_mode=VisionRunningMode.VIDEO,
+    output_face_blendshapes=True,
+    output_facial_transformation_matrixes=True
+    )
+
+Face_recognizer = FaceLandmarker.create_from_options(options)
+
+timestamp = 0
+
+
 # Initializes holistic model
 with mp_holistic.Holistic(**settings) as holistic :      # Create holistic object
     while cam.isOpened():
@@ -112,6 +108,7 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         # Make Detections
         results = holistic.process(image)
+        print(results.face_landmarks)
 
         # Draw landmarks
         # Face
@@ -136,15 +133,6 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
                                         )
             
 
-            # Draw landmarks
-            mp_drawing.draw_landmarks(image=image,
-                                    landmark_list=results.left_hand_landmarks,
-                                    connections=mp_holistic.HAND_CONNECTIONS,
-                                    landmark_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_landmark),
-                                    connection_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_connection)
-                                    )
-            
-
         """
         ==========================================================================================================
         FACE STATUS (BLENDSHAPES)
@@ -153,7 +141,7 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
 
         mp_Image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cropped_frame)
         face_result = Face_recognizer.detect_for_video(mp_Image,timestamp)
-        # print(face_result)
+        print(face_result)
         if face_result != None:
             face_values = blendshapes_to_dict(face_blendshape=face_result.face_blendshapes[0]) # get all needed values from blend list
             # print (face_values)
