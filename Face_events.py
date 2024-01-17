@@ -79,6 +79,14 @@ options = FaceLandmarkerOptions(
 
 Face_recognizer = FaceLandmarker.create_from_options(options)
 
+face_status={
+    'smile': None,
+    'kiss': None,
+    'left_blink': None,
+    'surprise': None,
+    'angry': None
+    }
+
 timestamp = 0
 
 
@@ -123,6 +131,21 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
             # Extract ROI
             ROI = image[y_min:y_max, x_min:x_max]
             cropped_frame = ROI.copy()
+            mp_Image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cropped_frame)
+            face_result = Face_recognizer.detect_for_video(mp_Image,timestamp)
+            if face_result != None:
+                face_values = blendshapes_to_dict(face_blendshape=face_result.face_blendshapes[0]) # get all needed values from blend list
+                # print (face_values)
+                face_status = event_faces(face_values)
+            else:
+                face_status={
+                    'smile': None,
+                    'kiss': None,
+                    'left_blink': None,
+                    'surprise': None,
+                    'angry': None
+                }
+
 
             # Draw landmarks
             mp_drawing.draw_landmarks(image=image,

@@ -64,7 +64,7 @@ options = GestureRecognizerOptions(
     running_mode=VisionRunningMode.IMAGE
     )
 
-recognizer = GestureRecognizer.create_from_options(options)
+HandRecognizer = GestureRecognizer.create_from_options(options)
 
 
 
@@ -95,8 +95,6 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
         # Make Detections
         results = holistic.process(image)
 
-
-        # Draw landmarks
         # Hands
         """ ===========================
                     RIGHT HAND
@@ -123,7 +121,7 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
             
             # GESTURE RECOGNITION
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=right_hand_frame)
-            Hand_results = recognizer.recognize(mp_image)
+            Hand_results = HandRecognizer.recognize(mp_image)
             if Hand_results.gestures :
                 hands_gesture['RIGHT'] = Hand_results.gestures[0][0].category_name
             else:
@@ -154,7 +152,7 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
             
             # GESTURE RECOGNITION
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=left_hand_frame)
-            Hand_results = recognizer.recognize(mp_image)
+            Hand_results = HandRecognizer.recognize(mp_image)
             if Hand_results.gestures :
                 hands_gesture['LEFT'] = Hand_results.gestures[0][0].category_name if (Hand_results.gestures[0][0].category_name != '' and Hand_results.gestures[0][0].category_name != 'none')  else None
             else:
