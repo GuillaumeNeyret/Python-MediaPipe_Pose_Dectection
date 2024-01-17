@@ -195,17 +195,6 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
                                         landmark_drawing_spec=mp_drawing.DrawingSpec(**draw_face_landmark),
                                         connection_drawing_spec=mp_drawing.DrawingSpec(**draw_face_connection)
                                         )
-            
-            # Display face results  
-            for event_name, event_state in face_status.items():
-                text = f'{event_name}: {event_state}'
-                color = (0, 255, 0) if event_state else (0, 0, 255)
-                cv2.putText(image, text, (10, 30 * (1 + list(face_status.keys()).index(event_name))),font, 1, color, 2, cv2.LINE_AA)
-            # Display face values
-            for i, (blendshape, value) in enumerate(face_values.items()):
-                blendshape_text = f'{blendshape}: {round(value,5)}'
-                cv2.putText(image, blendshape_text, (10, 30 * (i + 1 + len(face_status) + 1)),font, 0.7, (255, 255, 0), 2, cv2.LINE_AA)
-
 
         # Hands
         """ ===========================
@@ -270,15 +259,6 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
                 hands_gesture['LEFT'] = None
         else :
             hands_gesture['LEFT'] = None
-
-        # Display hand results   
-        if face_values:
-            for event_name, event_state in hands_gesture.items():
-                text = f'{event_name}: {event_state}'
-                color = (0, 255, 0)
-                y_position = 30 * (1+ 1 + len(face_status) + 1 + len(face_values) + list(hands_gesture.keys()).index(event_name))
-                cv2.putText(image, text, (10, y_position), font, 1, color, 2, cv2.LINE_AA)
-                # cv2.putText(image, text, (10, 30 * (1 + list(hands_gesture.keys()).index(event_name))),font, 1, color, 2, cv2.LINE_AA)
         
 
         """
@@ -306,6 +286,15 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
         #     left_hand_frame = cv2.flip(left_hand_frame,1)
         #     cv2.imshow('LEFT HAND', left_hand_frame)
 
+        # Display face results  
+        for event_name, event_state in face_status.items():
+            text = f'{event_name}: {event_state}'
+            color = (0, 255, 0) if event_state else (0, 0, 255)
+            cv2.putText(image, text, (10, 30 * (1 + list(face_status.keys()).index(event_name))),font, 1, color, 2, cv2.LINE_AA)
+        # Display face values
+        for i, (blendshape, value) in enumerate(face_values.items()):
+            blendshape_text = f'{blendshape}: {round(value,5)}'
+            cv2.putText(image, blendshape_text, (10, 30 * (i + 1 + len(face_status) + 1)),font, 0.7, (255, 255, 0), 2, cv2.LINE_AA)
 
         # Display hand results    
         for event_name, event_state in hands_gesture.items():
