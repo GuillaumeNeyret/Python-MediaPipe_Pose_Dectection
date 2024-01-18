@@ -13,8 +13,8 @@ FUNCTIONS DEFINITION
 
 # Transform a blendshape to a dict with only values from the need_value list
 def blendshapes_to_dict(face_blendshape):
-
     return {i : face_blendshape[getattr(Blendshapes, i).value].score for i in blend_list}
+
 
 # Returns True if Kiss 
 def kiss(blend_values:Dict[str,float]) -> bool:
@@ -36,12 +36,14 @@ def smile(blend_values:Dict[str,float])-> bool:
 
 # Returns True if surprise
 def surprise(blend_values:Dict[str,float])-> bool:
+    # Surprise if Brows Up and No Blink and Jaw Open
     if (blend_values["BROW_OUTER_UP_LEFT"]>event_triggers.BROW_UP and blend_values["BROW_OUTER_UP_RIGHT"]>event_triggers.BROW_UP and 
-        blend_values['EYE_BLINK_LEFT']<event_triggers.NO_BLINK and blend_values['EYE_BLINK_RIGHT']<event_triggers.NO_BLINK):
+        blend_values['EYE_BLINK_LEFT']<event_triggers.NO_BLINK and blend_values['EYE_BLINK_RIGHT']<event_triggers.NO_BLINK and
+        blend_values['JAW_OPEN']>event_triggers.OPEN_MOUTH):
         return True
     return False
 
-
+# Returns True if angry
 def angry(blend_values:Dict[str,float])-> bool:
     if blend_values['BROW_DOWN_LEFT']>event_triggers.BROW_DOWN and blend_values['BROW_DOWN_RIGHT']>event_triggers.BROW_DOWN:
         return True
@@ -50,14 +52,44 @@ def angry(blend_values:Dict[str,float])-> bool:
 # Return face expression as a dict
 def event_faces(blend_values: Dict[str, float]) -> Dict[str, bool]:
     return {
-        'smile': smile(blend_values),
-        'kiss': kiss(blend_values),
-        'left_blink': left_blink(blend_values),
-        'surprise': surprise(blend_values),
-        'angry': angry(blend_values)
+        'Smile': smile(blend_values),
+        'Kiss': kiss(blend_values),
+        'Left_blink': left_blink(blend_values),
+        'Surprise': surprise(blend_values),
+        'Angry': angry(blend_values)
     }
 
+def triggering_status(face_status,hands_gesture):
+    left_hand, right_hand = hands_gesture['LEFT'] , hands_gesture['RIGHT']
 
+    res = {
+        'Kiss': face_status['Kiss'],
+        'Smile':face_status['Smile'],
+        'Wink': face_status['Left_blink'],
+        'Surprise': face_status['Surprise'],
+        'Zen':True if (left_hand, right_hand) == ('zen','zen') else None,
+        'Pulp_fiction':None,
+        'Okay': True if left_hand == 'okay' else None,
+        'Left_Thumb':True if left_hand == 'thumb_up' else None,
+        'Angry': face_status['Angry']
+    }
+
+    return res
+
+def triggering_status_init():
+    res = {
+        'Kiss': None,
+        'Smile':None,
+        'Wink': None,
+        'Surprise': None,
+        'Zen':None,
+        'Pulp_fiction':None,
+        'Okay': None,
+        'Left_Thumb':None,
+        'Angry': None
+    }
+
+    return res
 
 """
 ==========================================================================================================
@@ -77,6 +109,7 @@ timestamp = 0
 
 margin_hand = Margins(top=0.1, right=0.1, bottom=0.1, left=0.1)
 
+trigger_status = triggering_status_init()
 
 face_status={
     'smile': None,
@@ -182,7 +215,7 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
             mp_Image = mp.Image(image_format=mp.ImageFormat.SRGB, data=face_frame)
             face_result = FaceRecognizer.detect_for_video(mp_Image,timestamp)
 
-            if face_result != None:
+            if face_result != None and face_result.face_blendshapes:
                 face_values = blendshapes_to_dict(face_blendshape=face_result.face_blendshapes[0]) # get all needed values from blend list
                 # print (face_values)
                 face_status = event_faces(face_values)
@@ -262,6 +295,7 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
         else :
             hands_gesture['LEFT'] = None
         
+        trigger_status = triggering_status(face_status,hands_gesture)
 
         """
         ==========================================================================================================
@@ -313,8 +347,16 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
         fps = int(fps)
         cv2.putText(image, str(fps), (500, 500), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
+        # Display triggers
+        k = 0
+        for i, (trigger, status) in enumerate(trigger_status.items()):
+            if status:
+                text = f'{trigger} Trigger'
+                cv2.putText(image, text, (10, 800+50 * (k + 1)), font, 2, (255,0,0), 4, cv2.LINE_AA)
+                k+=1
+
         # Display the resulting frame
-        cv2.imshow('MP TEST', image)
+        cv2.imshow('MP FACE', image)
 
         # Press 'q' or 'Esc" to exit
         if cv2.waitKey(5) & 0xFF in [ord('q'), 27]:

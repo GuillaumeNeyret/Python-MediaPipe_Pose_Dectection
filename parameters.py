@@ -10,13 +10,13 @@ res_cam_width = 1920    # 3840 for 4K Cam
 # MediaPipe Holistic Settings
 settings = {
     # 'static_image_mode': False,
-    'model_complexity': 1,
+    'model_complexity': 0,
     # 'smooth_landmarks': True,
     # 'enable_segmentation': False,
     # 'smooth_segmentation': True,
     # 'refine_face_landmarks': False,
-    'min_detection_confidence': 0.5,
-    'min_tracking_confidence': 0.5
+    'min_detection_confidence': 0.6,
+    'min_tracking_confidence': 0.3
 }
 
 # MediaPipe Holistic Settings
@@ -85,8 +85,8 @@ class event_triggers(float, Enum):
     NO_BLINK = 0.15
     BLINK = 0.3
     KISS = 0.4
-    BROW_DOWN = 0.4
+    BROW_DOWN = 0.1
     OPEN_MOUTH = 0.5
     NO_OPEN_MOUTH = 0.1
-    SMILE = 0.65
-    BROW_UP = 0.8
+    SMILE = 0.5
+    BROW_UP = 0.5
