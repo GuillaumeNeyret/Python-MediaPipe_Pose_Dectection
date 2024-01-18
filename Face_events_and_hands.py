@@ -4,6 +4,7 @@ import time, cv2
 from mediapipe.tasks.python.vision.face_landmarker import Blendshapes
 from typing import List, Dict
 from margins import Margins
+from mediapipe.python.solutions.hands import HandLandmark
 
 """
 ==========================================================================================================
@@ -24,7 +25,8 @@ def kiss(blend_values:Dict[str,float]) -> bool:
 
 # Returns True if Left Blink only
 def left_blink(blend_values:Dict[str,float])-> bool:
-    if blend_values['EYE_BLINK_LEFT']>event_triggers.BLINK and blend_values['EYE_BLINK_RIGHT']<event_triggers.NO_BLINK:
+    # if blend_values['EYE_BLINK_LEFT']-blend_values['EYE_BLINK_RIGHT']>event_triggers.BLINK_DIFF and blend_values['EYE_BLINK_LEFT']>event_triggers.BLINK:
+    if blend_values['EYE_BLINK_LEFT']>event_triggers.BLINK and blend_values['EYE_BLINK_RIGHT']<event_triggers.NO_BLINK and blend_values['EYE_BLINK_LEFT']-blend_values['EYE_BLINK_RIGHT']>event_triggers.BLINK_DIFF:
         return True
     return False
 
@@ -57,7 +59,7 @@ def event_faces(blend_values: Dict[str, float]) -> Dict[str, bool]:
         'Kiss': kiss(blend_values),
         'Left_blink': left_blink(blend_values),
         'Surprise': surprise(blend_values),
-        'Angry': angry(blend_values)
+        'Angry': angry(blend_values) if not smile(blend_values) and not kiss(blend_values) else False
     }
 
 def triggering_status(face_status,hands_gesture):
@@ -69,7 +71,7 @@ def triggering_status(face_status,hands_gesture):
         'Wink': face_status['Left_blink'],
         'Surprise': face_status['Surprise'],
         'Zen':True if (left_hand, right_hand) == ('zen','zen') else None,
-        'Pulp_fiction':None,
+        'Pulp_Fiction':None,
         'Okay': True if left_hand == 'okay' else None,
         'Left_Thumb':True if left_hand == 'thumb_up' else None,
         'Angry': face_status['Angry']
@@ -84,18 +86,13 @@ def triggering_status_init():
         'Wink': None,
         'Surprise': None,
         'Zen':None,
-        'Pulp_fiction':None,
+        'Pulp_Fiction':None,
         'Okay': None,
         'Left_Thumb':None,
         'Angry': None
     }
 
     return res
-
-
-def crop_portrait(image, width, height, center):
-    cropped = image[center[0] - (width)]
-    cropped = frame[center[0] - (crop_dim[0]) // 2: center[0] + (crop_dim[0]) // 2, center[1] - (crop_dim[1]) // 2: center[1] + (crop_dim[1]) // 2]
 
 
 """
@@ -132,6 +129,7 @@ hands_gesture = {
 }
 
 face_values = {i : None for i in blend_list}
+
 
 """
 ==========================================================================================================
@@ -312,6 +310,36 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
         
         trigger_status = triggering_status(face_status,hands_gesture)
 
+        # Pulp Fiction case
+        if hands_gesture['LEFT'] == 'pulp_fiction' or hands_gesture['RIGHT'] == 'pulp_fiction':
+            if hands_gesture['LEFT'] == 'pulp_fiction':
+                pass
+            if hands_gesture['RIGHT'] == 'pulp_fiction' and results.face_landmarks:
+                # Get max, min coords from the 2 fingers
+                INDEX_ID = [HandLandmark.INDEX_FINGER_MCP,HandLandmark.INDEX_FINGER_PIP,HandLandmark.INDEX_FINGER_DIP,HandLandmark.INDEX_FINGER_TIP]
+                MIDDLE_ID = [HandLandmark.MIDDLE_FINGER_MCP,HandLandmark.MIDDLE_FINGER_PIP,HandLandmark.MIDDLE_FINGER_DIP,HandLandmark.MIDDLE_FINGER_TIP]
+
+                x_index_values = [results.right_hand_landmarks.landmark[id].x for id in INDEX_ID]
+                y_index_values = [results.right_hand_landmarks.landmark[id].y for id in INDEX_ID]
+                x_middle_values = [results.right_hand_landmarks.landmark[id].x for id in MIDDLE_ID]
+                y_middle_values = [results.right_hand_landmarks.landmark[id].y for id in MIDDLE_ID]
+
+                x_finger_min = min(min(x_index_values),min(x_middle_values))
+                x_finger_max = max(max(x_index_values),max(x_middle_values))
+                y_finger_min = min(min(y_index_values),min(y_middle_values))
+                y_finger_max = max(max(y_index_values),max(y_middle_values))
+
+                right_eye_x = (results.face_landmarks.landmark[33].x+results.face_landmarks.landmark[133].x)/2
+                right_eye_y = (results.face_landmarks.landmark[159].y+results.face_landmarks.landmark[145].y)/2
+                left_eye_x = (results.face_landmarks.landmark[362].x+results.face_landmarks.landmark[398].x)/2
+                left_eye_y = (results.face_landmarks.landmark[159].y+results.face_landmarks.landmark[145].y)/2
+
+                epsilon = 0.1
+                # RIGHT EYE CLOSED TO PULP FUCTION SIGN
+                if x_finger_min*(1-epsilon)<right_eye_x<x_finger_max*(1+epsilon) and y_finger_min*(1-epsilon)<right_eye_y<y_finger_max*(1+epsilon):
+                    trigger_status['Pulp_Fiction']=True
+
+
         """
         ==========================================================================================================
         DISPLAY
@@ -371,6 +399,12 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
                 k+=1
 
         # Display the resulting frame
+        # scale = 60
+        # width = int(image.shape[1]*scale/100)
+        # height = int(image.shape[0]*scale/100)
+        # dim = (width,height)
+        # resized = cv2.resize(image,dim,interpolation=cv2.INTER_AREA)
+        # cv2.imshow('MP FACE', resized)
         cv2.imshow('MP FACE', image)
 
         # Press 'q' or 'Esc" to exit

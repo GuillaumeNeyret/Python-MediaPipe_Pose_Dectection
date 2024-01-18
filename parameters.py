@@ -92,11 +92,12 @@ blend_list = [
     ]
 
 class event_triggers(float, Enum):
-    NO_BLINK = 0.15
+    NO_BLINK = 0.2
     BLINK = 0.3
     KISS = 0.4
-    BROW_DOWN = 0.1
+    BROW_DOWN = 0.15
     OPEN_MOUTH = 0.5
     NO_OPEN_MOUTH = 0.1
     SMILE = 0.5
-    BROW_UP = 0.5
+    BROW_UP = 0.3
+    BLINK_DIFF = 0.1

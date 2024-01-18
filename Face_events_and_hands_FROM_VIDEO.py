@@ -4,6 +4,7 @@ import time, cv2
 from mediapipe.tasks.python.vision.face_landmarker import Blendshapes
 from typing import List, Dict
 from margins import Margins
+from mediapipe.python.solutions.hands import HandLandmark
 
 """
 ==========================================================================================================
@@ -24,7 +25,8 @@ def kiss(blend_values:Dict[str,float]) -> bool:
 
 # Returns True if Left Blink only
 def left_blink(blend_values:Dict[str,float])-> bool:
-    if blend_values['EYE_BLINK_LEFT']>event_triggers.BLINK and blend_values['EYE_BLINK_RIGHT']<event_triggers.NO_BLINK:
+    # if blend_values['EYE_BLINK_LEFT']-blend_values['EYE_BLINK_RIGHT']>event_triggers.BLINK_DIFF and blend_values['EYE_BLINK_LEFT']>event_triggers.BLINK:
+    if blend_values['EYE_BLINK_LEFT']>event_triggers.BLINK and blend_values['EYE_BLINK_RIGHT']<event_triggers.NO_BLINK and blend_values['EYE_BLINK_LEFT']-blend_values['EYE_BLINK_RIGHT']>event_triggers.BLINK_DIFF:
         return True
     return False
 
@@ -57,7 +59,7 @@ def event_faces(blend_values: Dict[str, float]) -> Dict[str, bool]:
         'Kiss': kiss(blend_values),
         'Left_blink': left_blink(blend_values),
         'Surprise': surprise(blend_values),
-        'Angry': angry(blend_values)
+        'Angry': angry(blend_values) if not smile(blend_values) and not kiss(blend_values) else False
     }
 
 def triggering_status(face_status,hands_gesture):
@@ -69,7 +71,7 @@ def triggering_status(face_status,hands_gesture):
         'Wink': face_status['Left_blink'],
         'Surprise': face_status['Surprise'],
         'Zen':True if (left_hand, right_hand) == ('zen','zen') else None,
-        'Pulp_fiction':None,
+        'Pulp_Fiction':None,
         'Okay': True if left_hand == 'okay' else None,
         'Left_Thumb':True if left_hand == 'thumb_up' else None,
         'Angry': face_status['Angry']
@@ -84,7 +86,7 @@ def triggering_status_init():
         'Wink': None,
         'Surprise': None,
         'Zen':None,
-        'Pulp_fiction':None,
+        'Pulp_Fiction':None,
         'Okay': None,
         'Left_Thumb':None,
         'Angry': None
@@ -101,8 +103,11 @@ VARIABLES
 """
 
 # VIDEO
-video_path ='assets/video/footage.mp4'
+looking = 'CAM'
+interaction = 'PULP_FICTION'
+video_path =f'assets/video/{interaction}_{looking}.mp4'
 cam = cv2.VideoCapture(video_path)
+paused = False
 
 prev_frame_time = 0
 err = 0
@@ -173,6 +178,19 @@ HandRecognizer = GestureRecognizer.create_from_options(options)
 # Initializes holistic model
 with mp_holistic.Holistic(**settings) as holistic :      # Create holistic object
     while True:
+        
+        # Press 'q' or 'Esc" to exit
+        key = cv2.waitKey(10) & 0xFF
+        if key in [ord('q'), 27]:
+            break
+        elif key == ord(' '):  # Si la touche espace est pressée
+            paused = not paused  # Inverse l'état de pause
+
+        # Si la vidéo est en pause, passe à l'itération suivante sans traiter le cadre
+        if paused:
+            continue
+
+
         ret, frame = cam.read()
         if not ret:
             cam.set(cv2.CAP_PROP_POS_FRAMES, 0)
@@ -222,12 +240,12 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
                 
 
             # Draw landmarks
-            mp_drawing.draw_landmarks(image=image,
-                                        landmark_list=results.face_landmarks,
-                                        connections= mp_holistic.FACEMESH_CONTOURS,
-                                        landmark_drawing_spec=mp_drawing.DrawingSpec(**draw_face_landmark),
-                                        connection_drawing_spec=mp_drawing.DrawingSpec(**draw_face_connection)
-                                        )
+            # mp_drawing.draw_landmarks(image=image,
+            #                             landmark_list=results.face_landmarks,
+            #                             connections= mp_holistic.FACEMESH_CONTOURS,
+            #                             landmark_drawing_spec=mp_drawing.DrawingSpec(**draw_face_landmark),
+            #                             connection_drawing_spec=mp_drawing.DrawingSpec(**draw_face_connection)
+            #                             )
 
         # Hands
         """ ===========================
@@ -297,6 +315,36 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
         
         trigger_status = triggering_status(face_status,hands_gesture)
 
+        # Pulp Fiction case
+        if hands_gesture['LEFT'] == 'pulp_fiction' or hands_gesture['RIGHT'] == 'pulp_fiction':
+            if hands_gesture['LEFT'] == 'pulp_fiction':
+                pass
+            if hands_gesture['RIGHT'] == 'pulp_fiction' and results.face_landmarks:
+                # Get max, min coords from the 2 fingers
+                INDEX_ID = [HandLandmark.INDEX_FINGER_MCP,HandLandmark.INDEX_FINGER_PIP,HandLandmark.INDEX_FINGER_DIP,HandLandmark.INDEX_FINGER_TIP]
+                MIDDLE_ID = [HandLandmark.MIDDLE_FINGER_MCP,HandLandmark.MIDDLE_FINGER_PIP,HandLandmark.MIDDLE_FINGER_DIP,HandLandmark.MIDDLE_FINGER_TIP]
+
+                x_index_values = [results.right_hand_landmarks.landmark[id].x for id in INDEX_ID]
+                y_index_values = [results.right_hand_landmarks.landmark[id].y for id in INDEX_ID]
+                x_middle_values = [results.right_hand_landmarks.landmark[id].x for id in MIDDLE_ID]
+                y_middle_values = [results.right_hand_landmarks.landmark[id].y for id in MIDDLE_ID]
+
+                x_finger_min = min(min(x_index_values),min(x_middle_values))
+                x_finger_max = max(max(x_index_values),max(x_middle_values))
+                y_finger_min = min(min(y_index_values),min(y_middle_values))
+                y_finger_max = max(max(y_index_values),max(y_middle_values))
+
+                right_eye_x = (results.face_landmarks.landmark[33].x+results.face_landmarks.landmark[133].x)/2
+                right_eye_y = (results.face_landmarks.landmark[159].y+results.face_landmarks.landmark[145].y)/2
+                left_eye_x = (results.face_landmarks.landmark[362].x+results.face_landmarks.landmark[398].x)/2
+                left_eye_y = (results.face_landmarks.landmark[159].y+results.face_landmarks.landmark[145].y)/2
+
+                epsilon = 0.1
+                # RIGHT EYE CLOSED TO PULP FUCTION SIGN
+                if x_finger_min*(1-epsilon)<right_eye_x<x_finger_max*(1+epsilon) and y_finger_min*(1-epsilon)<right_eye_y<y_finger_max*(1+epsilon):
+                    trigger_status['Pulp_Fiction']=True
+            
+
         """
         ==========================================================================================================
         DISPLAY
@@ -347,12 +395,19 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
         fps = int(fps)
         cv2.putText(image, str(fps), (500, 500), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
+        # Display triggers
+        k = 0
+        for i, (trigger, status) in enumerate(trigger_status.items()):
+            if status:
+                text = f'{trigger} Trigger'
+                cv2.putText(image, text, (10, 800+50 * (k + 1)), font, 2, (255,0,0), 4, cv2.LINE_AA)
+                k+=1
+
+
         # Display the resulting frame
         cv2.imshow('MP FACE', image)
 
-        # Press 'q' or 'Esc" to exit
-        if cv2.waitKey(3) & 0xFF in [ord('q'), 27]:
-            break
+
 
 cam.release()
 cv2.destroyAllWindows()
