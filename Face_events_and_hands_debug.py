@@ -211,37 +211,37 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
         """ ===========================
                     FACE
         =============================== """ 
-        if results.face_landmarks :
+        # if results.face_landmarks :
 
-            # Gets Face coords
-            head_landmarks = results.face_landmarks.landmark
-            x_min = int(max(0,min(head_landmarks, key=lambda x: x.x).x * image.shape[1]))
-            x_max = int(max(0,max(head_landmarks, key=lambda x: x.x).x * image.shape[1]))
-            y_min = int(max(0,min(head_landmarks, key=lambda y: y.y).y * image.shape[0]))
-            y_max = int(max(0,max(head_landmarks, key=lambda y: y.y).y * image.shape[0]))
-            # Extract ROI
-            ROI = image[y_min:y_max, x_min:x_max]
-            face_frame = ROI.copy()
+        #     # Gets Face coords
+        #     head_landmarks = results.face_landmarks.landmark
+        #     x_min = int(min(head_landmarks, key=lambda x: x.x).x * image.shape[1])
+        #     x_max = int(max(head_landmarks, key=lambda x: x.x).x * image.shape[1])
+        #     y_min = int(min(head_landmarks, key=lambda y: y.y).y * image.shape[0])
+        #     y_max = int(max(head_landmarks, key=lambda y: y.y).y * image.shape[0])
+        #     # Extract ROI
+        #     ROI = image[y_min:y_max, x_min:x_max]
+        #     face_frame = ROI.copy()
 
-            # FACE BELNDSHAPES RECOGNIZER
-            mp_Image = mp.Image(image_format=mp.ImageFormat.SRGB, data=face_frame)
-            face_result = FaceRecognizer.detect_for_video(mp_Image,timestamp)
+        #     # FACE BELNDSHAPES RECOGNIZER
+        #     mp_Image = mp.Image(image_format=mp.ImageFormat.SRGB, data=face_frame)
+        #     face_result = FaceRecognizer.detect_for_video(mp_Image,timestamp)
 
-            if face_result != None and face_result.face_blendshapes:
-                face_values = blendshapes_to_dict(face_blendshape=face_result.face_blendshapes[0]) # get all needed values from blend list
-                # print (face_values)
-                face_status = event_faces(face_values)
-            else:
-                face_status = {key: None for key in face_status}   
+        #     if face_result != None and face_result.face_blendshapes:
+        #         face_values = blendshapes_to_dict(face_blendshape=face_result.face_blendshapes[0]) # get all needed values from blend list
+        #         # print (face_values)
+        #         face_status = event_faces(face_values)
+        #     else:
+        #         face_status = {key: None for key in face_status}   
                 
 
-            # Draw landmarks
-            mp_drawing.draw_landmarks(image=image,
-                                        landmark_list=results.face_landmarks,
-                                        connections= mp_holistic.FACEMESH_CONTOURS,
-                                        landmark_drawing_spec=mp_drawing.DrawingSpec(**draw_face_landmark),
-                                        connection_drawing_spec=mp_drawing.DrawingSpec(**draw_face_connection)
-                                        )
+        #     # Draw landmarks
+        #     mp_drawing.draw_landmarks(image=image,
+        #                                 landmark_list=results.face_landmarks,
+        #                                 connections= mp_holistic.FACEMESH_CONTOURS,
+        #                                 landmark_drawing_spec=mp_drawing.DrawingSpec(**draw_face_landmark),
+        #                                 connection_drawing_spec=mp_drawing.DrawingSpec(**draw_face_connection)
+        #                                 )
             
 
         # Hands
@@ -249,15 +249,16 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
                     RIGHT HAND
         =============================== """ 
         if results.right_hand_landmarks:
+            print('RIGHT Hand detected')
             # Gets Hand coords
             right_hand_landmarks = results.right_hand_landmarks.landmark
-            x_min = int(max(0,min(right_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1-margin_hand.left)))
-            x_max = int(max(0,max(right_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1+margin_hand.right)))
-            y_min = int(max(0,min(right_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1-margin_hand.bottom)))
-            y_max = int(max(0,max(right_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1+margin_hand.top)))
+            x_min_right = int(min(right_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1-margin_hand.left))
+            x_max_right = int(max(right_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1+margin_hand.right))
+            y_min_right = int(min(right_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1-margin_hand.bottom))
+            y_max_right = int(max(right_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1+margin_hand.top))
             # Extract ROI
-            ROI = image[y_min:y_max, x_min:x_max]
-            right_hand_frame = ROI.copy()
+            # ROI = image[y_min:y_max, x_min:x_max]
+            # right_hand_frame = ROI.copy()
             # print(f"x_min: {x_min}, x_max: {x_max}, y_min: {y_min}, y_max: {y_max}")
             # print('Right Hand shapes :', right_hand_frame.shape)            
 
@@ -270,45 +271,53 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
                                     )
             
             # GESTURE RECOGNITION
-            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=right_hand_frame)
-            Hand_results = HandRecognizer.recognize(mp_image)
-            if Hand_results.gestures :
-                hands_gesture['RIGHT'] = Hand_results.gestures[0][0].category_name if (Hand_results.gestures[0][0].category_name != '' and Hand_results.gestures[0][0].category_name != 'none')  else None
-            else:
-                hands_gesture['RIGHT'] = None
-        else :
-            hands_gesture['RIGHT'] = None
+        #     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=right_hand_frame)
+        #     print('mp_image type:', type(mp_image))
+        #     Hand_results = HandRecognizer.recognize(mp_image)
+        #     print('Hand reco finish')
+        #     if Hand_results.gestures :
+        #         hands_gesture['RIGHT'] = Hand_results.gestures[0][0].category_name if (Hand_results.gestures[0][0].category_name != '' and Hand_results.gestures[0][0].category_name != 'none')  else None
+        #     else:
+        #         hands_gesture['RIGHT'] = None
+        # else :
+        #     hands_gesture['RIGHT'] = None
+        #     print('NO RIGHT HAND')
             
-        """ ===========================
-                    LEFT HAND
-        =============================== """ 
+        # """ ===========================
+        #             LEFT HAND
+        # =============================== """ 
         if results.left_hand_landmarks:
+            print('LEFT Hand detected')
             # Gets Hand coords
             left_hand_landmarks = results.left_hand_landmarks.landmark
-            x_min = int(max(0,min(left_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1-margin_hand.left)))
-            x_max = int(max(0,max(left_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1+margin_hand.right)))
-            y_min = int(max(0,min(left_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1-margin_hand.bottom)))
-            y_max = int(max(0,max(left_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1+margin_hand.top)))
-            # Extract ROI
-            ROI = image[y_min:y_max, x_min:x_max]
-            left_hand_frame = ROI.copy()
-            # Draw landmarks
-            mp_drawing.draw_landmarks(image=image,
-                                    landmark_list=results.left_hand_landmarks,
-                                    connections=mp_holistic.HAND_CONNECTIONS,
-                                    landmark_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_landmark),
-                                    connection_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_connection)
-                                    )
+            x_min_left = int(min(left_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1-margin_hand.left))
+            x_max_left = int(max(left_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1+margin_hand.right))
+            y_min_left = int(min(left_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1-margin_hand.bottom))
+            y_max_left = int(max(left_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1+margin_hand.top))
+        #     # Extract ROI
+        #     ROI = image[y_min:y_max, x_min:x_max]
+        #     left_hand_frame = ROI.copy()
+        #     print('Left Hand shapes :', left_hand_frame.shape)  
+        #     # Draw landmarks
+        #     mp_drawing.draw_landmarks(image=image,
+        #                             landmark_list=results.left_hand_landmarks,
+        #                             connections=mp_holistic.HAND_CONNECTIONS,
+        #                             landmark_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_landmark),
+        #                             connection_drawing_spec=mp_drawing.DrawingSpec(**draw_hand_connection)
+        #                             )
             
-            # GESTURE RECOGNITION
-            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=left_hand_frame)
-            Hand_results = HandRecognizer.recognize(mp_image)
-            if Hand_results.gestures :
-                hands_gesture['LEFT'] = Hand_results.gestures[0][0].category_name if (Hand_results.gestures[0][0].category_name != '' and Hand_results.gestures[0][0].category_name != 'none')  else None
-            else:
-                hands_gesture['LEFT'] = None
-        else :
-            hands_gesture['LEFT'] = None
+        #     # GESTURE RECOGNITION
+        #     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=left_hand_frame)
+        #     print('mp_image type:', type(mp_image))
+        #     Hand_results = HandRecognizer.recognize(mp_image)
+        #     print('Hand reco finish')
+        #     if Hand_results.gestures :
+        #         hands_gesture['LEFT'] = Hand_results.gestures[0][0].category_name if (Hand_results.gestures[0][0].category_name != '' and Hand_results.gestures[0][0].category_name != 'none')  else None
+        #     else:
+        #         hands_gesture['LEFT'] = None
+        # else :
+        #     hands_gesture['LEFT'] = None
+        #     print('NO LEFT HAND')
         
         trigger_status = triggering_status(face_status,hands_gesture)
 
@@ -337,22 +346,31 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
         #     left_hand_frame = cv2.flip(left_hand_frame,1)
         #     cv2.imshow('LEFT HAND', left_hand_frame)
 
-        # Display face results  
-        for event_name, event_state in face_status.items():
-            text = f'{event_name}: {event_state}'
-            color = (0, 255, 0) if event_state else (0, 0, 255)
-            cv2.putText(image, text, (10, 30 * (1 + list(face_status.keys()).index(event_name))),font, 1, color, 2, cv2.LINE_AA)
-        # Display face values
-        for i, (blendshape, value) in enumerate(face_values.items()):
-            blendshape_text = f'{blendshape}: {round(value,5)}' if value!=None else f'{blendshape}: {value}'
-            cv2.putText(image, blendshape_text, (10, 30 * (i + 1 + len(face_status) + 1)),font, 0.7, (255, 255, 0), 2, cv2.LINE_AA)
+        # Display hand max min coord
+        if results.right_hand_landmarks:
+            text = f"RIGHT x_min: {x_min_right}, x_max: {x_max_right}, y_min: {y_min_right}, y_max: {y_max_right}"
+            cv2.putText(image,text, (200,200),font,1,(0,0,255),2,cv2.LINE_AA)
+            # print(f"x_min: {x_min}, x_max: {x_max}, y_min: {y_min}, y_max: {y_max}")
+        if results.left_hand_landmarks:
+            text = f"LEFT x_min: {x_min_left}, x_max: {x_max_left}, y_min: {y_min_left}, y_max: {y_max_left}"
+            cv2.putText(image,text, (200,300),font,1,(255,0,0),2,cv2.LINE_AA)
 
-        # Display hand results    
-        for event_name, event_state in hands_gesture.items():
-            text = f'{event_name}: {event_state}'
-            color = (0, 255, 0)
-            y_position = 30 * (1+ 1 + len(face_status) + 1 + len(face_values) + list(hands_gesture.keys()).index(event_name))
-            cv2.putText(image, text, (10, y_position), font, 1, color, 2, cv2.LINE_AA)
+        # Display face results  
+        # for event_name, event_state in face_status.items():
+        #     text = f'{event_name}: {event_state}'
+        #     color = (0, 255, 0) if event_state else (0, 0, 255)
+        #     cv2.putText(image, text, (10, 30 * (1 + list(face_status.keys()).index(event_name))),font, 1, color, 2, cv2.LINE_AA)
+        # # Display face values
+        # for i, (blendshape, value) in enumerate(face_values.items()):
+        #     blendshape_text = f'{blendshape}: {round(value,5)}' if value!=None else f'{blendshape}: {value}'
+        #     cv2.putText(image, blendshape_text, (10, 30 * (i + 1 + len(face_status) + 1)),font, 0.7, (255, 255, 0), 2, cv2.LINE_AA)
+
+        # # Display hand results    
+        # for event_name, event_state in hands_gesture.items():
+        #     text = f'{event_name}: {event_state}'
+        #     color = (0, 255, 0)
+        #     y_position = 30 * (1+ 1 + len(face_status) + 1 + len(face_values) + list(hands_gesture.keys()).index(event_name))
+        #     cv2.putText(image, text, (10, y_position), font, 1, color, 2, cv2.LINE_AA)
             # cv2.putText(image, text, (10, 30 * (1 + list(hands_gesture.keys()).index(event_name))),font, 1, color, 2, cv2.LINE_AA)
 
         # FPS Display

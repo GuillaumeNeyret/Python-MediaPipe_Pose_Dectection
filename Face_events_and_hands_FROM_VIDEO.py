@@ -45,19 +45,52 @@ def surprise(blend_values:Dict[str,float])-> bool:
 
 # Returns True if angry
 def angry(blend_values:Dict[str,float])-> bool:
-    if blend_values['BROW_DOWN_LEFT']>event_triggers.BROW_DOWN and blend_values['BROW_DOWN_RIGHT']>event_triggers.BROW_DOWN:
+    # Trigger if Brow Down and Mouth Closed
+    if blend_values['BROW_DOWN_LEFT']>event_triggers.BROW_DOWN and blend_values['BROW_DOWN_RIGHT']>event_triggers.BROW_DOWN and blend_values['JAW_OPEN']<event_triggers.NO_OPEN_MOUTH :
         return True
     return False
 
 # Return face expression as a dict
 def event_faces(blend_values: Dict[str, float]) -> Dict[str, bool]:
     return {
-        'smile': smile(blend_values),
-        'kiss': kiss(blend_values),
-        'left_blink': left_blink(blend_values),
-        'surprise': surprise(blend_values),
-        'angry': angry(blend_values)
+        'Smile': smile(blend_values),
+        'Kiss': kiss(blend_values),
+        'Left_blink': left_blink(blend_values),
+        'Surprise': surprise(blend_values),
+        'Angry': angry(blend_values)
     }
+
+def triggering_status(face_status,hands_gesture):
+    left_hand, right_hand = hands_gesture['LEFT'] , hands_gesture['RIGHT']
+
+    res = {
+        'Kiss': face_status['Kiss'],
+        'Smile':face_status['Smile'],
+        'Wink': face_status['Left_blink'],
+        'Surprise': face_status['Surprise'],
+        'Zen':True if (left_hand, right_hand) == ('zen','zen') else None,
+        'Pulp_fiction':None,
+        'Okay': True if left_hand == 'okay' else None,
+        'Left_Thumb':True if left_hand == 'thumb_up' else None,
+        'Angry': face_status['Angry']
+    }
+
+    return res
+
+def triggering_status_init():
+    res = {
+        'Kiss': None,
+        'Smile':None,
+        'Wink': None,
+        'Surprise': None,
+        'Zen':None,
+        'Pulp_fiction':None,
+        'Okay': None,
+        'Left_Thumb':None,
+        'Angry': None
+    }
+
+    return res
 
 
 
@@ -77,13 +110,14 @@ timestamp = 0
 
 margin_hand = Margins(top=0.1, right=0.1, bottom=0.1, left=0.1)
 
+trigger_status = triggering_status_init()
 
 face_status={
-    'smile': None,
-    'kiss': None,
-    'left_blink': None,
-    'surprise': None,
-    'angry': None
+    'Smile': None,
+    'Kiss': None,
+    'Left_blink': None,
+    'Surprise': None,
+    'Angry': None
     }
 
 hands_gesture = {
@@ -167,10 +201,10 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
 
             # Gets Face coords
             head_landmarks = results.face_landmarks.landmark
-            x_min = int(min(head_landmarks, key=lambda x: x.x).x * image.shape[1])
-            x_max = int(max(head_landmarks, key=lambda x: x.x).x * image.shape[1])
-            y_min = int(min(head_landmarks, key=lambda y: y.y).y * image.shape[0])
-            y_max = int(max(head_landmarks, key=lambda y: y.y).y * image.shape[0])
+            x_min = int(max(0,min(head_landmarks, key=lambda x: x.x).x * image.shape[1]))
+            x_max = int(max(0,max(head_landmarks, key=lambda x: x.x).x * image.shape[1]))
+            y_min = int(max(0,min(head_landmarks, key=lambda y: y.y).y * image.shape[0]))
+            y_max = int(max(0,max(head_landmarks, key=lambda y: y.y).y * image.shape[0]))
             # Extract ROI
             ROI = image[y_min:y_max, x_min:x_max]
             face_frame = ROI.copy()
@@ -202,13 +236,15 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
         if results.right_hand_landmarks:
             # Gets Hand coords
             right_hand_landmarks = results.right_hand_landmarks.landmark
-            x_min = int(min(right_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1-margin_hand.left))
-            x_max = int(max(right_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1+margin_hand.right))
-            y_min = int(min(right_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1-margin_hand.bottom))
-            y_max = int(max(right_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1+margin_hand.top))
+            x_min = int(max(0,min(right_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1-margin_hand.left)))
+            x_max = int(max(0,max(right_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1+margin_hand.right)))
+            y_min = int(max(0,min(right_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1-margin_hand.bottom)))
+            y_max = int(max(0,max(right_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1+margin_hand.top)))
             # Extract ROI
             ROI = image[y_min:y_max, x_min:x_max]
-            right_hand_frame = ROI.copy()            
+            right_hand_frame = ROI.copy()
+            # print(f"x_min: {x_min}, x_max: {x_max}, y_min: {y_min}, y_max: {y_max}")
+            # print('Right Hand shapes :', right_hand_frame.shape)            
 
             # Draw landmarks
             mp_drawing.draw_landmarks(image=image,
@@ -234,10 +270,10 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
         if results.left_hand_landmarks:
             # Gets Hand coords
             left_hand_landmarks = results.left_hand_landmarks.landmark
-            x_min = int(min(left_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1-margin_hand.left))
-            x_max = int(max(left_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1+margin_hand.right))
-            y_min = int(min(left_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1-margin_hand.bottom))
-            y_max = int(max(left_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1+margin_hand.top))
+            x_min = int(max(0,min(left_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1-margin_hand.left)))
+            x_max = int(max(0,max(left_hand_landmarks, key=lambda x: x.x).x * image.shape[1]*(1+margin_hand.right)))
+            y_min = int(max(0,min(left_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1-margin_hand.bottom)))
+            y_max = int(max(0,max(left_hand_landmarks, key=lambda y: y.y).y * image.shape[0]*(1+margin_hand.top)))
             # Extract ROI
             ROI = image[y_min:y_max, x_min:x_max]
             left_hand_frame = ROI.copy()
@@ -259,6 +295,7 @@ with mp_holistic.Holistic(**settings) as holistic :      # Create holistic objec
         else :
             hands_gesture['LEFT'] = None
         
+        trigger_status = triggering_status(face_status,hands_gesture)
 
         """
         ==========================================================================================================
